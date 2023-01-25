@@ -1,0 +1,4 @@
+"","X","driver_genes","sample","pos","types","context","gene","region","group","cmgs","SBS1|Patient","SBS1|Samples","SBS2|Patient","SBS2|Samples","SBS3|Patient","SBS3|Samples","SBS4|Patient","SBS4|Samples","SBS5|Patient","SBS5|Samples","SBS6|Patient","SBS6|Samples","SBS7|Patient","SBS7|Samples"
+"1",0,"LRP1B","EPICC_C522_D1_G10_D1","chr2_140711617","T>C","ATT","LRP1B","intron_variant","DriverGene",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"2",1,"LRP1B","EPICC_C522_D1_G2_D1","chr2_140711617","T>C","ATT","LRP1B","intron_variant","DriverGene",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"3",2,"LRP1B","EPICC_C522_W1_B2_D1","chr2_140711617","T>C","ATT","LRP1B","intron_variant","DriverGene",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA

@@ -1,0 +1,11 @@
+"","X","driver_genes","sample","pos","types","context","gene","region","group","cmgs","SBS1|Patient","SBS1|Samples","SBS2|Patient","SBS2|Samples","SBS3|Patient","SBS3|Samples","SBS4|Patient","SBS4|Samples","SBS5|Patient","SBS5|Samples","SBS6|Patient","SBS6|Samples","SBS7|Patient","SBS7|Samples"
+"1",0,"LRP1B","EPICC_C542_A1_G4_D1","chr2_141366242","T>A","GTT","LRP1B","intron_variant","DriverGene","",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"2",1,"LRP1B","EPICC_C542_B1_G7_D1","chr2_141607412","T>A","CTC","LRP1B","intron_variant","DriverGene","",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"3",2,"LRP1B","EPICC_C542_C1_G2_D1","chr2_141607412","T>A","CTC","LRP1B","intron_variant","DriverGene","",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"4",3,"LRP1B","EPICC_C542_C1_G7_D1","chr2_141607412","T>A","CTC","LRP1B","intron_variant","DriverGene","",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"5",4,"EPHA3","EPICC_C542_A1_G1_D1","chr3_89263082","T>A","GTT","EPHA3","intron_variant","DriverGene","",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"6",5,"EPHA3","EPICC_C542_C1_G2_D1","chr3_89190273","T>C","CTC","EPHA3","intron_variant","DriverGene","",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"7",6,"EPHA3","EPICC_C542_C1_G5_D1","chr3_89190273","T>C","CTC","EPHA3","intron_variant","DriverGene","",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"8",7,"EPHA3","EPICC_C542_C1_G7_D1","chr3_89190273","T>C","CTC","EPHA3","intron_variant","DriverGene","",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"9",8,"EPHA3","EPICC_C542_D1_G3_D1","chr3_89190273","T>C","CTC","EPHA3","intron_variant","DriverGene","",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"10",0,"HDAC9","EPICC_C542_A1_G4_D1","chr7_18457306","T>A","CTC","HDAC9","intron_variant","ChromatinModifierGene","HDAC9",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
