@@ -1,0 +1,13 @@
+﻿type,Genes,name,mle,cilow,cihigh
+AdjacentNormal,All genes,Missense,0.974182726,0.900679073,1.053684949
+AdjacentNormal,All genes,Truncating,1.095111865,0.929447151,1.290304668
+DistantNormal,All genes,Missense,1.021150142,0.83083856,1.255054428
+DistantNormal,All genes,Truncating,1.265797702,0.827921793,1.935259871
+AdjacentNormal,Oncogenes,Missense,1.19474218,0.761267527,1.87504238
+AdjacentNormal,Oncogenes,Truncating,1.730188149,0.780729415,3.8343003
+DistantNormal,Oncogenes,Missense,0.693042535,0.278663677,1.723611635
+DistantNormal,Oncogenes,Truncating,2.172380658,0.524033421,9.005604473
+AdjacentNormal,TSG,Missense,1.079134459,0.777098528,1.498563102
+AdjacentNormal,TSG,Truncating,1.803257856,1.046291886,3.107869743
+DistantNormal,TSG,Missense,0.406075318,0.191588762,0.860682863
+DistantNormal,TSG,Truncating,0.416651857,0.050501053,3.437527752
