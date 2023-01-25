@@ -4,6 +4,10 @@ Scripts used to analyse pks+ E.Coli & CRC data.
 The link of the data:
 https://data.mendeley.com/datasets/9hkz4r7rhv/draft?a=19af6992-06bc-469d-974a-6579d6541963
 
-Scripts for plotting the figures in maintext and supplemetary.
+Scripts for plotting the figures in maintext and supplemetary:
 --CodeofEPICCpks.py
 --FigureS1.R 
+
+The input files for plotting:
+--InputDataforplots
+
