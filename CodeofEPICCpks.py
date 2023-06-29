@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 from collections import Counter
 from functools import reduce
-import seaborn as sns
+
 from itertools import groupby
 import os
 import glob
@@ -16,6 +17,41 @@ import scipy.stats as stats
 from statannot import add_stat_annotation
 from matplotlib import gridspec
 import statsmodels.api as sm
+
+
+def add_line(ax, xpos, ypos):
+    line = plt.Line2D([ypos, ypos + .2], [xpos, xpos], color='black', transform=ax.transAxes)
+    line.set_clip_on(False)
+    ax.add_line(line)
+
+
+def label_len(my_index, level):
+    labels = my_index.get_level_values(level)
+    return [(k, sum(1 for i in g)) for k, g in groupby(labels)]
+
+
+def label_group_bar_table(ax, df, fontsizegene=8, fontsizepatient=10):
+    scale = 1. / df.index.size
+    for level in range(df.index.nlevels):
+        if level == 0:
+            fs = fontsizegene
+            xpos = -.4
+            lll = 0.04
+        else:
+            fs = fontsizepatient
+            xpos = -0.2##
+            lll = 0.07
+        pos = df.index.size
+        for label, rpos in label_len(df.index, level):
+
+            add_line(ax, pos * scale, xpos)
+            print( pos * scale,xpos)
+            pos -= rpos
+            lypos = (pos + .4 * rpos) * scale
+            ax.text(xpos + lll, lypos, label, ha='center', transform=ax.transAxes, fontsize=fs)
+        add_line(ax, pos * scale, xpos)
+        # xpos -= .2
+
 
 """
 mypath='/Users/bchen/Desktop/Projects/'
@@ -134,8 +170,6 @@ plt.show()
 #####FIg.2 A and B
 dfall1=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/SignatureSPSall1.csv")
 dfAll2=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/SignatureSPSall2.csv")
-
-
 fig=plt.figure(figsize=(10,5))
 gs = gridspec.GridSpec(1, 2, width_ratios=[4, 1]) 
 ax = plt.subplot(gs[0])
@@ -212,25 +246,36 @@ plt.show()
 
 ########
 ########Figure 3
-df4=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/EPICCpksReads.csv",index_col='Unnamed: 0')
+df4=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/EPICCpksReads.csv",index_col='Unnamed: 0')
 pids=['C516','C518','C519','C524','C527',
       'C528','C530','C531','C536','C537',
       'C538','C539','C542','C543','C544',
       'C547','C548','C549','C550','C551',
       'C552','C555','C560','C561','C562']
 
+pids=['C516','C518','C519', 'C522','C524','C525','C527',
+      'C528','C530','C531','C532','C536','C537',
+      'C538','C539','C542','C543','C544',
+      'C547','C548','C549','C550','C551',
+      'C552','C554','C555', 'C559','C560','C561','C562']
 
-with PdfPages('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Figure3.pdf') as pdf:
+pids=['C516','C519','C524','C527',
+      'C528','C530','C531','C537',
+      'C543','C544',
+      'C547','C548','C549','C550','C551',
+      'C552','C555','C560','C561','C562']
+
+with PdfPages('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Figure3t20.pdf') as pdf:
     fig=plt.figure(figsize=(25,18))
     axi=1
     for pid in pids:               
 
-        ax=fig.add_subplot(5,6,axi)
+        ax=fig.add_subplot(4,5,axi)
         axi+=1
-        if axi%6==0:
-            axi+=1
-        else:
-            pass 
+        # if axi%4==0:
+        #     axi+=1
+        # else:
+        #     pass
         plt.title("%s"%pid,fontsize=18)
         dfi=df4[[x.split("_")[0]==pid for x in df4.index]]
         dfi=dfi[["Z1" not in x for x in dfi.index]] 
@@ -258,7 +303,9 @@ with PdfPages('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Figure3.pdf') as p
                     dfiorder.append(8)         
                 elif dfi.index[i].split("_")[1][0]=='H':
                     dfiorder.append(9)
-                
+
+
+        dfi=dfi[[x.split("_")[1][0] != 'W' for x in dfi.index]]# C522 W sample
         dfi['order']=dfiorder
         ax=sns.barplot(x=dfi.index,y='AeadsCount',data=dfi,palette=clrs,order=dfi['order'].sort_values().index)
         
@@ -329,7 +376,18 @@ with PdfPages('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Figure3.pdf') as p
 ##only SPS7
 #group for driver gene
 pidlist=[['C519','C524','C527','C528','C530','C549','C531','C537','C543','C544','C547','C560','C550','C551']]
+pidlist=[['C516','C518','C519','C524','C527',
+      'C528','C530','C531','C536','C537',
+      'C538','C539','C542','C543','C544',
+      'C547','C548','C549','C550','C551',
+      'C552','C555','C560','C561','C562']]
 
+pidlist=[['C516','C518','C519', 'C522','C524','C525','C527',
+      'C528','C530','C531','C532','C536','C537',
+      'C538','C539','C542','C543','C544',
+      'C547','C548','C549','C550','C551',
+      'C552','C554','C555', 'C559','C560','C561','C562']]
+dd=pd.DataFrame()
 for pids in pidlist:
     dflist=[]
     for pid in pids:
@@ -343,6 +401,8 @@ for pids in pidlist:
         df=pd.merge(df,dgl,how='inner',left_on='driver_genes',right_on='driver_genes')   
   
         df.index=df['driver_genes']+"_"+df['sample']
+        dd=dd.append(df)
+
         df=df.groupby('driver_genes').mean()
         dfx=df[['SBS1|Patient', 
            'SBS2|Patient',  'SBS3|Patient', 
@@ -365,7 +425,9 @@ for pids in pidlist:
         dflist.append(dfx)
         
     dfalldriver= reduce(lambda  left,right: pd.concat([left,right]), dflist)
-    
+
+
+dd=pd.DataFrame()
 for pids in pidlist:
     dflist=[]
     for pid in pids:
@@ -380,6 +442,8 @@ for pids in pidlist:
 
   
         df.index=df['driver_genes']+"_"+df['sample']
+        dd = dd.append(df)
+
         df=df.groupby('driver_genes').mean()
         dfx=df[['SBS1|Patient', 
            'SBS2|Patient',  'SBS3|Patient', 
@@ -432,13 +496,33 @@ fig.subplots_adjust(bottom=.1*df.index.nlevels)
 
 plt.tight_layout()
 
-plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Figure4.pdf')
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Figure4NNNN2.pdf')
 plt.show()
 
 
+###
+df=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/drivercmgSBS7/table_drivers_new.csv",index_col='Unnamed: 0')
+dfDriver=df[df['group']=='DriverGene']
+dfDriver['Pid']=[x.split("_")[1] for x in dfDriver['sample']]
+
+dfDriver2=dfDriver[['Pid','SBS1|Patient', 'SBS1|Samples','SBS2|Patient', 'SBS2|Samples', 'SBS3|Patient', 'SBS3|Samples','SBS4|Patient', 'SBS4|Samples', 'SBS5|Patient', 'SBS5|Samples','SBS6|Patient', 'SBS6|Samples', 'SBS7|Patient', 'SBS7|Samples']]
+dfDriver2.index=dfDriver2['Pid']
+dfDriver2.drop(['Pid'],axis=1,inplace=True)
+sns.heatmap(dfDriver, cmap="coolwarm", cbar_kws={"shrink": 0.5}, square=True, cbar=False)
+plt.gcf().set_size_inches(17, 10)
+labels = ['' for item in ax.get_yticklabels()]
+ax.set_yticklabels(labels)
+ax.set_ylabel('')
+ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize=18, rotation=90)
+ax.text(-1, 1, "A", transform=ax.transAxes, fontsize=16, fontweight='bold', va='top', ha='right')
+
+label_group_bar_table(ax, dfDriver, fontsizegene=10, fontsizepatient=12)
+fig.subplots_adjust(bottom=.1 * df.index.nlevels)
 
 
 
+dfCmg=df[df['group']=='ChromatinModifierGene']
+dfCmg['Pid']=[x.split("_")[1] for x in dfCmg['sample']]
 
 #######
 ######Fig. 5
@@ -532,9 +616,10 @@ plt.show()
 
 #########
 #####Extended Data Fig.2
-dfall=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/EPICC_CancerNormal_normalized_proportions.csv",index_col='Unnamed: 0')
-
-
+dfall=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/EPICC_CancerNormal_normalized_proportions.csv",index_col='Unnamed: 0')
+# df=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/EPICC_new_method_raw_counts.csv",index_col='Unnamed: 0')
+# dfp=df.div(df.sum(axis=1), axis=0)
+# dfp.colum
 Pnormal={
 'C516':['E1_B1'],
 'C518':['E1_B1'],
@@ -573,12 +658,18 @@ pids=['C516','C519','C524','C527','C528',
       'C530','C531','C537','C543','C544',
       'C547','C548','C549','C550','C551',
       'C552','C555','C560','C562']
+pids=['C516','C518','C519', 'C524','C525','C527',
+      'C528','C530','C531','C532','C536','C537',
+      'C538','C539','C542','C543','C544',
+      'C547','C548','C549','C550','C551',
+      'C552','C554','C555', 'C559','C560','C561','C562']
+
 
 dfisumlist=[]
 fig=plt.figure(figsize=(20,12))
 axi=1
 for pid in pids:
-    ax=fig.add_subplot(4,5,axi)
+    ax=fig.add_subplot(5,6,axi)
     axi+=1
     dfi=dfall[[x==pid for x in dfall['Pid']]]
     if len(dfi)>0:
@@ -622,7 +713,7 @@ for pid in pids:
     dfisumlist.append(dfisum)
 
 plt.tight_layout()
-plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/SuppFigure2.pdf')
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/SuppFigure2NN.pdf')
 plt.show()
 
 
@@ -667,13 +758,21 @@ print("going on")
 #####
 #####Extended Data Fig. 4
 
-df4=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/EPICCpksReads.csv",index_col='Unnamed: 0')
+df4=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data//InputDataforplots/EPICCpksReads.csv",index_col='Unnamed: 0')
 pids=['C516','C518','C519','C524','C527',
       'C528','C530','C531','C536','C537',
       'C538','C539','C542','C543','C544',
       'C547','C548','C549','C550','C551',
       'C552','C555','C560','C561','C562']
-with PdfPages('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS4.pdf') as pdf:
+
+pids=['C516','C518','C519', 'C522','C524','C525',
+      'C527','C528','C530','C531','C532',
+      'C536','C537','C538','C539','C542',
+      'C543','C544', 'C547','C548','C549',
+      'C550','C551', 'C552','C554','C555',
+      'C559','C560','C561','C562']
+
+with PdfPages('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS4NN.pdf') as pdf:
     fig=plt.figure(figsize=(25,10))
     axi=1
     for pid in pids:
@@ -683,7 +782,7 @@ with PdfPages('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS4.pdf') as 
         
         dfi2[dfi2>0]=1
         if dfi2.sum().sum()>0:
-            ax=fig.add_subplot(3,6,axi)
+            ax=fig.add_subplot(5,6,axi)
             axi+=1
             plt.title("%s"%pid,fontsize=18)
 
@@ -841,6 +940,774 @@ plt.xlabel("proportion of samples with pks+ genes")
 plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS6.pdf')
 plt.show()
 
+#####
+#####Extended Data Fig.7
+
+dfall1=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/SignatureSPSall1.csv")
+
+dfAll2=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/SignatureSPSall1.csv")
+
+dfsps7=dfall1.pivot_table(index='pid', columns='type', values='Percentage',aggfunc='mean', fill_value=0)
+
+
+dfTdelPksMSS=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/dfdelpksMSS.csv",index_col='Unnamed: 0')
+dfTdelPksMSI=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/dfdelpksMSI.csv",index_col='Unnamed: 0')
+
+dfdel=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/proportion_of_short_tdel_allsample.csv")
+dftdel=dfdel.pivot_table(index='pid', columns='group', values='proportion of short T-del')
+
+dfspstdel=pd.merge(dftdel,dfsps7,left_index=True,right_index=True,how='left')
+dfspstdelt=dfspstdel.T
+dfspstdeltMSS=dfspstdelt[['C519','C524','C527','C528','C530','C531','C537', 'C538','C539','C542','C543','C544',
+ 'C547','C549','C550','C551','C555','C560','C561']]
+dfspstdelMSS=dfspstdeltMSS.T
+p=sns.regplot(x=dfspstdelMSS['EPICC Cancer clonal'],y=dfspstdelMSS['Cancer clonal'], fit_reg=True, marker="o", color="black", scatter_kws={'s':50})
+
+plt.ylabel("proportion of short T-dels")
+plt.xlabel("proportion of SPS7 in EPICC cancer clonal")
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS71.pdf')
+plt.show()
+
+p=sns.regplot(x=dfspstdelMSS['EPICC Cancer subclonal'],y=dfspstdelMSS['Cancer subclonal'], fit_reg=True, marker="o", color="black", scatter_kws={'s':50})
+
+plt.ylabel("proportion of short T-dels")
+plt.xlabel("proportion of SPS7 in EPICC Cancer subclonal")
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS72.pdf')
+plt.show()
+
+p=sns.regplot(x=dfspstdelMSS['EPICC Adjacent Normal'],y=dfspstdelMSS['adjacent normal'], fit_reg=True, marker="o", color="black", scatter_kws={'s':50})
+
+plt.ylabel("proportion of short T-dels")
+plt.xlabel("proportion of SPS7 in EPICC adjacent normal")
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS73.pdf')
+plt.show()
+
+p=sns.regplot(x=dfspstdelMSS['EPICC Distant Normal'],y=dfspstdelMSS['distant normal'], fit_reg=True, marker="o", color="black", scatter_kws={'s':50})
+
+plt.ylabel("proportion of short T-dels")
+plt.xlabel("proportion of SPS7 in EPICC distant normal")
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS74.pdf')
+plt.show()
+
+####
+pks1=['C516','C518','C519', 'C527', 'C528', 'C530', 'C532', 'C536',  'C538' , 'C539', 'C542' , 'C544', 'C547', 'C548', 'C549', 'C550',  'C561', 'C562']
+pks0=['C522','C524','C525','C531','C537','C543','C551','C552','C554','C555','C559','C560']
+
+dfall1=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/SignatureSPSall1.csv")
+#
+MSI=['C516','C536','C548','C518','C562','C552']
+
+pks=[]
+for i in range(len(dfall1)):
+    if dfall1['pid'].iloc[i] in pks1:
+        pks.append('Yes')
+    else:
+        pks.append('No')
+
+mssmsi=[]
+for i in range(len(dfall1)):
+    if dfall1['pid'].iloc[i] in MSI:
+        mssmsi.append('MSI')
+    else:
+        mssmsi.append('MSS')
+
+dfall1['pks']=pks
+dfall1['MSSMSI']=mssmsi
+
+df=dfall1[dfall1['MSSMSI']=='MSS']
+sps7=[]
+for i in range(len(df)):
+    if df['Percentage'].iloc[i]>0:
+        sps7.append(1)
+    else:
+        sps7.append(0)
+df['sps7']=sps7
+
+sns.boxplot(x = df['type'],y = df['Percentage'],hue = df['pks'],order=['distant normal', 'adjacent normal','Cancer clonal', 'Cancer subclonal'],hue_order=['No','Yes'])
+plt.ylabel("Percentage of SPS7")
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS8-1NN.pdf')
+plt.show()
+
+dfAll2=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/SignatureSPSall2.csv")
+dfAll2['pid']=[x.split("_")[0] for x in dfAll2['Unnamed: 0']]
+
+pks=[]
+for i in range(len(dfAll2)):
+    if dfAll2['pid'].iloc[i] in pks1:
+        pks.append('With')
+    elif dfAll2['pid'].iloc[i] in pks0:
+        pks.append('Without')
+    else:
+        pks.append('Normal')
+
+mssmsi=[]
+for i in range(len(dfAll2)):
+    if dfAll2['pid'].iloc[i].startswith("C"):
+        if dfAll2['pid'].iloc[i] in MSI:
+            mssmsi.append('MSI')
+        else:
+            mssmsi.append('MSS')
+    else:
+        mssmsi.append('Normal')
+
+dfAll2['pks']=pks
+dfAll2['MSSMSI']=mssmsi
+
+
+sns.boxplot(x = dfAll2['pks'],y = dfAll2['Percentage'])
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS8-2.pdf')
+plt.show()
+###########################Raw counts
+dfR=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/EPICC_new_method_raw_values.csv")
+dfR.columns=['pid', 'SPS1', 'SPS2','SPS3', 'SPS4 ', 'SPS5 ','SPS6', 'SPS7']
+pks1=['C516','C518','C519', 'C527', 'C528', 'C530', 'C532', 'C536',  'C538' , 'C539', 'C542' , 'C544', 'C547', 'C548', 'C549', 'C550',  'C561', 'C562']
+pks0=['C522','C524','C525','C531','C537','C543','C551','C552','C554','C555','C559','C560']
+
+MSI=['C516','C536','C548','C518','C562','C552']
+
+pks=[]
+for i in range(len(dfR)):
+    if dfR['pid'].iloc[i] in pks1:
+        pks.append('Yes')
+    else:
+        pks.append('No')
+
+mssmsi=[]
+for i in range(len(dfR)):
+    if dfR['pid'].iloc[i] in MSI:
+        mssmsi.append('MSI')
+    else:
+        mssmsi.append('MSS')
+
+dfR['pks']=pks
+dfR['MSSMSI']=mssmsi
+
+df=dfR[dfR['MSSMSI']=='MSS']
+df['type']='cancer'
+dfC1=df[['pid', 'SPS7', 'pks','MSSMSI', 'type']]
+
+sns.boxplot(x = df['type'],y = df['Percentage'],hue = df['pks'],order=['distant normal', 'adjacent normal','Cancer clonal', 'Cancer subclonal'],hue_order=['No','Yes'])
+plt.ylabel("Percentage of SPS7")
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS8-12N.pdf')
+plt.show()
+
+dfNo=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/EPICC_normal_exposure_per_sample.csv")
+dfNo.columns=['pid', 'SPS1', 'SPS2','SPS3', 'SPS4 ', 'SPS5 ','SPS6', 'SPS7']
+pks=[]
+for i in range(len(dfNo)):
+    if dfNo['pid'].iloc[i].split("_")[0] in pks1:
+        pks.append('Yes')
+    else:
+        pks.append('No')
+
+
+mssmsi=[]
+for i in range(len(dfNo)):
+    if dfNo['pid'].iloc[i].split("_")[0] in MSI:
+        mssmsi.append('MSI')
+    else:
+        mssmsi.append('MSS')
+
+dfNo['pks']=pks
+dfNo['MSSMSI']=mssmsi
+
+df=dfNo[dfNo['MSSMSI']=='MSS']
+dfC2=df[['pid', 'SPS7', 'pks','MSSMSI']]
+dfC2x=pd.merge(dfC2,dfall1,left_on='pid',right_on='sample',how='left')
+
+dfC2=dfC2x[['pid_x','SPS7', 'pks', 'MSSMSI', 'type']]
+dfC2.columns=['pid', 'SPS7', 'pks','MSSMSI', 'type']
+df=pd.concat([dfC1,dfC2])
+
+sns.boxplot(x = df['type'],y = df['SPS7'],hue = df['pks'],order=['distant normal', 'adjacent normal','cancer'],hue_order=['No','Yes'])
+plt.ylabel("Raw vaule of SPS7")
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS8-12N.pdf')
+plt.show()
+
+######
+
+dfNo=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/sps7RawcountsOfAll.csv",index_col='Unnamed: 0')
+
+pks=[]
+for i in range(len(dfNo)):
+    if dfNo['pid'].iloc[i].split("_")[0] in pks1:
+        pks.append('Yes')
+    else:
+        pks.append('No')
+
+
+mssmsi=[]
+for i in range(len(dfNo)):
+    if dfNo['pid'].iloc[i].split("_")[0] in MSI:
+        mssmsi.append('MSI')
+    else:
+        mssmsi.append('MSS')
+
+dfNo['pks']=pks
+dfNo['MSSMSI']=mssmsi
+
+df=dfNo[dfNo['MSSMSI']=='MSS']
+
+sns.boxplot(x = df['group'],y = df['SPS7'],hue = df['pks'],order=['DistantNormals', 'AdjacentNormals','clonal','subclonal'],hue_order=['No','Yes'])
+plt.ylabel("Raw vaule of SPS7")
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS8-13N.pdf')
+plt.show()
+
+######
 
 
 
+dfAll2=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/proportion_of_short_tdel_allsample.csv")
+
+pks=[]
+for i in range(len(dfAll2)):
+    if dfAll2['pid'].iloc[i] in pks1:
+        pks.append('With')
+    elif dfAll2['pid'].iloc[i] in pks0:
+        pks.append('Without')
+    else:
+        pks.append('Normal')
+
+mssmsi=[]
+for i in range(len(dfAll2)):
+    if dfAll2['pid'].iloc[i].startswith("C"):
+        if dfAll2['pid'].iloc[i] in MSI:
+            mssmsi.append('MSI')
+        else:
+            mssmsi.append('MSS')
+    else:
+        mssmsi.append('Normal')
+
+dfAll2['pks']=pks
+dfAll2['MSSMSI']=mssmsi
+
+dfAll2=dfAll2[dfAll2['MSSMSI']=='MSS']
+ax1=sns.boxplot(x = dfAll2['group'],y = dfAll2['proportion of short T-del'],hue = dfAll2['pks'])
+
+pairs = [(('EPICC Cancer clonal','With'), ('EPICC Cancer clonal','Without')),
+(('EPICC Adjacent Normal','With'), ('EPICC Adjacent Normal','Without')),
+(('EPICC Cancer subclonal','With'), ('EPICC Cancer subclonal','Without')),
+(('EPICC Distant Normal','With'), ('EPICC Distant Normal','Without'))]
+add_stat_annotation(ax1, box_pairs=pairs,x='group',y='proportion of short T-del',hue='pks',data=dfAll2,test='Mann-Whitney', text_format='star', loc='inside', verbose=2)
+
+plt.xticks(rotation=90)
+plt.legend(loc='upper left', bbox_to_anchor=(1.03, 1))
+plt.tight_layout()
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS8-3N.pdf',figsize=(10,10))
+plt.show()
+
+####
+pids=['C516','C518','C519', 'C527', 'C528', 'C530', 'C532', 'C536',  'C538' , 'C539', 'C542' , 'C544', 'C547', 'C548', 'C549', 'C550',  'C561', 'C562',
+'C522','C524','C525','C531','C537','C543','C551','C552','C554','C555','C559','C560']
+pks1=['C516','C518','C519', 'C527', 'C528', 'C530', 'C532', 'C536',  'C538' , 'C539', 'C542' , 'C544', 'C547', 'C548', 'C549', 'C550',  'C561', 'C562']
+pks0=['C522','C524','C525','C531','C537','C543','C551','C552','C554','C555','C559','C560']
+MSI=['C516','C536','C548','C518','C562','C552']
+
+ss=[]
+driverN=[]
+mutN=[]
+pks=[]
+MS=[]
+
+for pid in pids:
+    df=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/drivercmgSBS7/%s_driver_cmg_InSBS7context.csv"%pid,index_col='Unnamed: 0')
+
+    df2=pd.DataFrame(df.groupby('sample').count())
+    for i in range(len(df2)):
+        sample=df2.index[i]
+        ss.append(sample)
+        driverN.append(df2['X'].iloc[i])
+        if sample.split("_")[1] in pks1:
+            pks.append("With")
+        else:
+            pks.append("Without")
+        if sample.split("_")[1] in MSI:
+            MS.append("MSI")
+        else:
+            MS.append("MSS")
+        df3 = pd.read_csv('/Users/bchen/Desktop/Projects/Normal/FilesForDnDs/%s.csv'%sample)
+        mutload=len(df3)
+        mutN.append(mutload)
+dfNN3=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/percentageofpksReadsEPICC.csv")
+dfNN3['sample']=["EPICC_"+x for x in dfNN3['Unnamed: 0']]
+
+
+
+spks=[]
+for i in range(len(dfNN3)):
+    if dfNN3['percentage2'].iloc[i]>0:
+        spks.append('With')
+    else:
+        spks.append('Without')
+
+dfNN3['samplepks']=spks
+
+mydf=pd.DataFrame({'sample':ss,'driverN':driverN,'mutN':mutN,'pks':pks,'MS':MS})
+mydf['DriverPercentage']=mydf['driverN']/mydf['mutN']
+mydf=mydf[mydf['MS']=='MSS']
+
+df5=pd.merge(mydf,dfNN3,left_on='sample',right_on='sample',how='left')
+ax1=sns.boxplot(x =df5['type'],y = df5['DriverPercentage'],hue=df5['pks+island'], order=['distant normal', 'adjacent normal', 'cancer'],hue_order=['No','Yes'])
+# sns.regplot(x=df5['DriverPercentage'],y=df5['percentage'], fit_reg=False, marker="o", color="grey", scatter_kws={'s':50})
+plt.ylabel('percentage of SBS7drivermutations')
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS8-5N.pdf',figsize=(10,10))
+plt.show()
+
+
+dfdel=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/proportion_of_short_tdel_allsample.csv")
+
+df6=pd.merge(df5,dfdel,left_on='sample',right_on='Unnamed: 0',how='left')
+ax1=sns.boxplot(x =df6['type'],y = df6['proportion of short T-del'],hue=df6['pks+island'],order=['distant normal', 'adjacent normal', 'cancer'],hue_order=['No','Yes'])
+pairs = [(('cancer','Yes'), ('cancer','No')),
+(('adjacent normal','Yes'), ('adjacent normal','No')),
+(('distant normal','Yes'), ('distant normal','No'))]
+add_stat_annotation(ax1, box_pairs=pairs,x='type',y='proportion of short T-del',hue='pks+island',data=df6,test='Mann-Whitney', text_format='star', loc='inside', verbose=2, order=['distant normal', 'adjacent normal', 'cancer'])
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureS8-4N.pdf',figsize=(10,10))
+plt.show()
+
+df6.to_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/pksSBSTdelsummary.csv")
+
+##
+
+
+
+
+###Fig2CNNN
+dfdel = pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/proportion_of_short_tdel_allsample.csv")
+
+cancer_clonal_norm=pd.read_excel("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/ID_assignments_patients.xlsx",sheet_name='cancer_clonal_norm')
+cancer_subclonal_norm=pd.read_excel("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/ID_assignments_patients.xlsx",sheet_name='cancer_subclonal_norm')
+adjacent_normal_norm=pd.read_excel("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/ID_assignments_patients.xlsx",sheet_name='adjacent_normal_norm')
+distant_normal_norm=pd.read_excel("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/ID_assignments_patients.xlsx",sheet_name='distant_normal_norm')
+
+
+cancer_clonal_norm=pd.read_excel("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/ID_assignments_patients.xlsx",sheet_name='cancer_clonal_norm')
+cancer_subclonal_norm=pd.read_excel("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/ID_assignments_samples.xlsx",sheet_name='cancer_subclonal_norm')
+adjacent_normal_norm=pd.read_excel("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/ID_assignments_samples.xlsx",sheet_name='adjacent_normal_norm')
+distant_normal_norm=pd.read_excel("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/ID_assignments_samples.xlsx",sheet_name='distant_normal_norm')
+normal_stratton=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/ID_assignments_Stratton_samples.csv")
+
+cancer_clonal_norm['ID1518']=cancer_clonal_norm['ID15']+cancer_clonal_norm['ID18']
+cancer_subclonal_norm['ID1518']=cancer_subclonal_norm['ID15']+cancer_subclonal_norm['ID18']
+adjacent_normal_norm['ID1518']=adjacent_normal_norm['ID15']+adjacent_normal_norm['ID18']
+distant_normal_norm['ID1518']=distant_normal_norm['ID15']+distant_normal_norm['ID18']
+normal_stratton['ID1518']=normal_stratton['ID15']+normal_stratton['ID18']
+
+
+
+dfCancerClonal=pd.melt(cancer_clonal_norm,['Unnamed: 0'])
+dfCancerClonal['group']='EPICC Cancer clonal'
+dfCancerClonal.columns=['pid','ID','Percentage','type']
+
+
+cancer_subclonal_norm=pd.melt(cancer_subclonal_norm,['Unnamed: 0'])
+cancer_subclonal_norm['group']='EPICC Cancer subclonal'
+cancer_subclonal_norm.columns=['sample','ID','Percentage','type']
+cancer_subclonal_norm['pid']=[x.split("_")[0] for x in cancer_subclonal_norm['sample']]
+
+adjacent_normal_norm=pd.melt(adjacent_normal_norm,['Unnamed: 0'])
+adjacent_normal_norm['group']='EPICC Adjacent Normal'
+adjacent_normal_norm.columns=['sample','ID','Percentage','type']
+adjacent_normal_norm['pid']=[x.split("_")[0] for x in adjacent_normal_norm['sample']]
+
+
+distant_normal_norm=pd.melt(distant_normal_norm,['Unnamed: 0'])
+distant_normal_norm['group']='EPICC Distant Normal'
+distant_normal_norm.columns=['sample','ID','Percentage','type']
+distant_normal_norm['pid']=[x.split("_")[0] for x in distant_normal_norm['sample']]
+
+normal_stratton=pd.melt(normal_stratton,['Unnamed: 0'])
+normal_stratton['group']='Healthy Normal (Lee-Six et al.)'
+normal_stratton.columns=['sample','ID','Percentage','type']
+
+
+df=pd.concat([dfCancerClonal,cancer_subclonal_norm,adjacent_normal_norm,distant_normal_norm,normal_stratton],join='outer')
+
+
+#df.columns=['pid','ID','Percentage','type']
+df=df[df['ID']=='ID18']
+df=df[df['ID']=='ID1518']
+df.fillna(0,inplace=True)
+
+fig = plt.figure(figsize=(10, 5))
+gs = gridspec.GridSpec(1, 2, width_ratios=[4, 1])
+ax = plt.subplot(gs[0])
+ax = sns.barplot(x=df['pid'], y='Percentage', hue='type', data=df,
+                 palette=['darkred', 'pink', "#00CDCD", "#FF7F00"],
+                 hue_order=['EPICC Cancer clonal', 'EPICC Cancer subclonal', 'EPICC Adjacent Normal',
+                            'EPICC Distant Normal'], errwidth=0.8)
+
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(handles, labels, ncol=1, loc='upper center', bbox_to_anchor=(0.86, 1), frameon=True, fontsize=8)
+plt.xticks(rotation=90)
+for xtick in ax.get_xticklabels():
+    if xtick.get_text() in MSI:
+        xtick.set_color("black")
+    else:
+        xtick.set_color("black")
+plt.ylim([0, 1])
+plt.title("proportion of  ID-15+18 in EPICC samples")
+ax.text(-0.03, 1.2, "A", transform=ax.transAxes, fontsize=16, fontweight='bold', va='top', ha='right')
+
+ax = plt.subplot(gs[1])
+ax = sns.boxplot(x='type', y='Percentage', data=df,
+                 palette=['darkred', 'pink', "#00CDCD", "#FF7F00","grey"],
+                 hue_order=['EPICC Cancer clonal', 'EPICC Cancer subclonal', 'EPICC Adjacent Normal',
+                            'EPICC Distant Normal','Healthy Normal (Lee-Six et al.)'])
+
+#pairs = [('EPICC Cancer clonal', 'EPICC Adjacent Normal'), ('EPICC Cancer clonal', 'EPICC Distant Normal')]
+#
+#annotator = Annotator(ax, pairs, x='type', y='Percentage', data=df)
+#annotator.configure(test="Mann-Whitney")
+#annotator.apply_and_annotate()
+
+plt.ylabel("proportion of   ID-15+18  in samples")
+plt.xlabel("Samples")
+plt.xticks(rotation=90)
+plt.title("")
+plt.tight_layout()
+ax.text(-0.13, 1.2, "B", transform=ax.transAxes, fontsize=16, fontweight='bold', va='top', ha='right')
+plt.tight_layout()
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Figure2CDRevised_sampleID1518allNormalBysample_2.pdf')
+plt.show()
+
+######New Figure4S
+df=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/drivercmgSBS7/table_drivers_new.csv",index_col='Unnamed: 0')
+df['Pid']=[x.split("_")[1] for x in df['sample']]
+df=df[df['group']=='DriverGene']
+dfx = df[['Pid','sample','driver_genes','SBS1|Patient',
+          'SBS2|Patient', 'SBS3|Patient',
+          'SBS4|Patient', 'SBS5|Patient',
+          'SBS6|Patient', 'SBS7|Patient']]
+dfx.columns = ['Pid','sample','driver_genes','SBS1', 'SBS2', 'SBS3', 'SBS4', 'SBS5', 'SBS6', 'SBS7']
+##MSS
+dfx=dfx[(dfx['Pid']!='C516')&(dfx['Pid']!='C518')&(dfx['Pid']!='C536')&(dfx['Pid']!='C548')&(dfx['Pid']!='C552')&(dfx['Pid']!='C562')]
+###MSI
+#dfx=dfx[(dfx['Pid']=='C516')|(dfx['Pid']=='C518')|(dfx['Pid']=='C536')|(dfx['Pid']=='C548') |(dfx['Pid']=='C552')|(dfx['Pid']=='C562')]
+dfalldriver = dfx.groupby(['Pid','driver_genes']).mean()
+
+# fig = plt.figure(figsize=(40, 12))
+# ax = fig.add_subplot(1, 3, 1)
+fig = plt.figure(figsize=(40, 12))
+gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1,2])
+ax = plt.subplot(gs[0])
+sns.heatmap(dfalldriver, cmap="coolwarm", cbar_kws={"shrink": 0.5}, square=True, cbar=True)
+plt.gcf().set_size_inches(10, 10)
+labels = ['' for item in ax.get_yticklabels()]
+ax.set_yticklabels(labels)
+ax.set_ylabel('')
+ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize=18, rotation=90)
+ax.text(-0.8, 1, "A", transform=ax.transAxes, fontsize=16, fontweight='bold', va='top', ha='right')
+
+label_group_bar_table(ax, dfalldriver, fontsizegene=8, fontsizepatient=10)
+fig.subplots_adjust(bottom=.1 * df.index.nlevels,top=0.9)
+plt.title("SBS7 driver")
+
+
+
+df=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/drivercmgSBS7/ChromatinModifierGeneslist_new.csv",index_col='Unnamed: 0')
+df['Pid']=[x.split("_")[1] for x in df['sample']]
+df=df[df['group']=='ChromatinModifierGene']
+dfx = df[['Pid','sample','driver_genes','SBS1|Patient',
+          'SBS2|Patient', 'SBS3|Patient',
+          'SBS4|Patient', 'SBS5|Patient',
+          'SBS6|Patient', 'SBS7|Patient']]
+dfx.columns = ['Pid','sample','driver_genes','SBS1', 'SBS2', 'SBS3', 'SBS4', 'SBS5', 'SBS6', 'SBS7']
+##MSS
+dfx=dfx[(dfx['Pid']!='C516')&(dfx['Pid']!='C518')&(dfx['Pid']!='C536')&(dfx['Pid']!='C548')&(dfx['Pid']!='C552')&(dfx['Pid']!='C562')]
+###MSI
+#dfx=dfx[(dfx['Pid']=='C516')|(dfx['Pid']=='C518')|(dfx['Pid']=='C536')|(dfx['Pid']=='C548') |(dfx['Pid']=='C552')|(dfx['Pid']=='C562')]
+dfalldriver = dfx.groupby(['Pid','driver_genes']).mean()
+
+
+#ax = fig.add_subplot(1, 3, 3)
+ax = plt.subplot(gs[1])
+sns.heatmap(dfalldriver, cmap="coolwarm", cbar_kws={"shrink": 0.5}, square=True, cbar=False)
+plt.gcf().set_size_inches(10, 10)
+labels = ['' for item in ax.get_yticklabels()]
+ax.set_yticklabels(labels)
+ax.set_ylabel('')
+ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize=18, rotation=90)
+ax.text(-0.8, 1, "B", transform=ax.transAxes, fontsize=16, fontweight='bold', va='top', ha='right')
+
+label_group_bar_table(ax, dfalldriver, fontsizegene=8, fontsizepatient=10)
+fig.subplots_adjust(bottom=.1 * df.index.nlevels,top=0.9)
+plt.title("SBS7 cmgs")
+plt.legend()
+
+# ax = fig.add_subplot(1, 3, 3)
+ax = plt.subplot(gs[2])
+sns.heatmap(df3t,linewidth=1, linecolor='grey', square=True,cbar_kws={'label': 'Number of rep T in T-homo',"shrink": 0.1,'ticks': [1, 2, 3]},vmin=1,vmax=10,cmap='Set1')
+plt.gcf().set_size_inches(10, 10)
+for _, spine in ax.spines.items():
+    spine.set_visible(True)
+    spine.set_linewidth(0.5)
+ax.set_xticklabels(ax.get_xmajorticklabels(),  rotation=90)
+#
+
+fig.subplots_adjust(bottom=.1 * df.index.nlevels,top=0.9)
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Figure4RevisedDriver_drivercmgMSS.pdf')
+#
+plt.show()
+
+
+
+
+#########New FigureMM
+df=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/drivercmgSBS7/ChromatinModifierGeneslist_new.csv",index_col='Unnamed: 0')
+df['Pid']=[x.split("_")[1] for x in df['sample']]
+df=df[df['group']=='ChromatinModifierGene']
+dfx = df[['Pid','sample','driver_genes','SBS1|Patient',
+          'SBS2|Patient', 'SBS3|Patient',
+          'SBS4|Patient', 'SBS5|Patient',
+          'SBS6|Patient', 'SBS7|Patient']]
+dfx.columns = ['Pid','sample','driver_genes','SBS1', 'SBS2', 'SBS3', 'SBS4', 'SBS5', 'SBS6', 'SBS7']
+
+dfx=dfx[(dfx['Pid']!='C516')&(dfx['Pid']!='C518')&(dfx['Pid']!='C536')&(dfx['Pid']!='C548')&(dfx['Pid']!='C552')&(dfx['Pid']!='C562')]
+
+
+dfallcmg = dfx.groupby(['Pid','driver_genes']).mean()
+
+
+# fig = plt.figure(figsize=(17, 20))
+# #plt.title("SBSs contribution for Chromatin Modifier Genes ")
+# ax = fig.add_subplot(1, 2, 1)
+# sns.heatmap(dfalldriver1, cmap="coolwarm", cbar_kws={"shrink": 0.5}, square=True, cbar=False)
+# plt.gcf().set_size_inches(17, 20)
+# labels = ['' for item in ax.get_yticklabels()]
+# ax.set_yticklabels(labels)
+# ax.set_ylabel('')
+# ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize=18, rotation=90)
+# ax.text(-0.8, 1, "A", transform=ax.transAxes, fontsize=16, fontweight='bold', va='top', ha='right')
+#
+# label_group_bar_table(ax, dfalldriver1, fontsizegene=10, fontsizepatient=12)
+# fig.subplots_adjust(bottom=.1 * df.index.nlevels)
+
+ax = fig.add_subplot(1, 2, 2)
+sns.heatmap(dfallcmg, cmap="coolwarm", cbar_kws={"shrink": 0.5}, square=True, cbar=False)
+plt.gcf().set_size_inches(17, 20)
+labels = ['' for item in ax.get_yticklabels()]
+ax.set_yticklabels(labels)
+ax.set_ylabel('')
+ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize=18, rotation=90)
+ax.text(-0.2, 1, "B", transform=ax.transAxes, fontsize=16, fontweight='bold', va='top', ha='right')
+
+label_group_bar_table(ax, dfallcmg, fontsizegene=10, fontsizepatient=12)
+fig.subplots_adjust(bottom=.1 * df.index.nlevels)
+plt.title("SBS7 cmgs")
+#fig.suptitle("SBSs contribution for Chromatin Modifier Genes")
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Figure4Revised3.pdf')
+
+plt.show()
+
+##
+import pandas as pd
+df=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/NormalIndels/Indels_by_crypts_modelling_crypts.csv",sep=',')
+
+df['Pid_sample']=[x+"_"+y for (x,y) in zip(df['patient'],df['crypt'])]
+
+s=list(set(df['Pid_sample']))
+
+for i in s:
+    dfx=df[df['Pid_sample']==i]
+    dfxx=dfx[['Pid_sample','ref','alt']]
+    dfxx.to_csv("/Users/bchen/Desktop/Projects/PKSFiles/NormalIndels/%s_RefAlt.csv"%i)
+
+###go to R extract indel and Tdel
+
+pidsN2 = ['C519', 'C530', 'C537', 'C544', 'C547', 'C552', 'C561', 'C562']
+Nsamplelist = {}
+#The muttype_sub column shows the number of repeat units. For microhomology (mh) deletions the mh length is shown
+for ss in s:
+    # dfx=pd.read_csv("/Users/bchen/Desktop/Projects/Normal/EPICC_csv_for_sig/SBS7indel/%s_DistantNormal_T-delContext2.csv"%pid,usecols=["sample_barcode","muttype_sub"])
+    dfx = pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/NormalTdels/%s_StrattonNormal_T-delContext.csv" % ss,usecols=["Pid_sample", "muttype_sub"])
+    samples = list(set(dfx['Pid_sample']))
+    for sample in samples:
+        dfxx = dfx[dfx['Pid_sample'] == sample]
+        dfxx.drop(['Pid_sample'], axis=1, inplace=True)
+
+        dfx2 = pd.DataFrame.from_dict(Counter(dfxx['muttype_sub']), orient='index')
+
+        dfx2.columns = [sample]
+        dfx2t = dfx2.T
+        dropcols = [x for x in dfx2t.columns if x < 7]
+        dropcols.sort()
+        dfxx = dfx2t[dropcols]
+        dfxx['6+'] = dfx2t[dfx2t.columns.drop(dropcols)].sum(1)
+        # dfxx.columns=['1','2','3','4','5','6+']
+        print(dfxx.columns[-1])
+        shortcols = [x for x in dfxx.columns[:-1] if int(x) < 4]
+        print(dfxx[shortcols])
+        prop1del = dfxx[shortcols].sum().sum() / dfxx.sum(1).sum()
+        Nsamplelist[sample] = [prop1del]
+
+dfStrattonNormal = pd.DataFrame.from_dict(Nsamplelist, orient='index')
+dfStrattonNormal['group'] = 'Healthy Normal (Lee-Six et al.)'
+dfStrattonNormal['pid'] = [x.split("_")[0] for x in dfStrattonNormal.index]
+dfStrattonNormal.columns = ['proportion of short T-del', 'group', 'pid']
+dfStrattonNormal.to_csv("/Users/bchen/Desktop/Projects/Normal/EPICC_csv_for_sig/SBS7indel/proportion_of_short_tdel_Strattonsample.csv")
+
+
+####
+dfStN=pd.read_csv("/Users/bchen/Desktop/Projects/Normal/EPICC_csv_for_sig/SBS7indel/proportion_of_short_tdel_Strattonsample.csv")
+
+#####Fig.2 C and D
+dfdel = pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/proportion_of_short_tdel_allsample.csv")
+
+dfall=pd.concat([dfdel,dfStN])
+
+fig = plt.figure(figsize=(10, 6))
+gs = gridspec.GridSpec(1, 2, width_ratios=[4, 1])
+ax = plt.subplot(gs[0])
+ax = sns.barplot(x=dfdel['pid'], y='proportion of short T-del', hue='group', data=dfdel,
+                 palette=['darkred', 'pink', "#00CDCD", "#FF7F00"],
+                 hue_order=['EPICC Cancer clonal', 'EPICC Cancer subclonal', 'EPICC Adjacent Normal',
+                            'EPICC Distant Normal'], errwidth=0.8)
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(handles, labels, ncol=1, loc='upper center', bbox_to_anchor=(0.4, 1), frameon=True, fontsize=8)
+plt.xticks(rotation=90)
+for xtick in ax.get_xticklabels():
+    if xtick.get_text() in MSI:
+        xtick.set_color("black")
+    else:
+        xtick.set_color("black")
+plt.ylim([0, 1])
+plt.title("proportion of T-del in EPICC samples")
+ax.text(-0.03, 1.2, "C", transform=ax.transAxes, fontsize=16, fontweight='bold', va='top', ha='right')
+
+ax = plt.subplot(gs[1])
+ax = sns.boxplot(x='group', y='proportion of short T-del in all T-del', data=dfall,
+                 palette=['darkred', 'pink', "#00CDCD", "#FF7F00",'grey'],
+                 hue_order=['EPICC Cancer clonal', 'EPICC Cancer subclonal', 'EPICC Adjacent Normal',
+                            'EPICC Distant Normal','Healthy Normal (Lee-Six et al.)'])
+
+pairs = [('EPICC Cancer clonal', 'EPICC Distant Normal'),('EPICC Cancer clonal', 'EPICC Adjacent Normal'),
+         ('EPICC Cancer clonal', 'Healthy Normal (Lee-Six et al.)'), ('Healthy Normal (Lee-Six et al.)', 'EPICC Distant Normal'),
+         ('Healthy Normal (Lee-Six et al.)', 'EPICC Adjacent Normal'), ( 'EPICC Cancer subclonal', 'Healthy Normal (Lee-Six et al.)')]
+#
+annotator = Annotator(ax, pairs, x='group', y='proportion of short T-del in all T-del', data=dfall,fontsize=0.4)
+annotator.configure(test="Mann-Whitney",line_offset=0.1,line_offset_to_group=0.1)
+annotator.apply_and_annotate()
+
+plt.ylabel("proportion of  T-del  in samples")
+plt.xlabel("Samples")
+plt.xticks(rotation=90)
+plt.title("")
+plt.tight_layout()
+ax.text(-0.13, 1.2, "D", transform=ax.transAxes, fontsize=16, fontweight='bold', va='top', ha='right')
+plt.tight_layout()
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Figure2CDNN.pdf')
+plt.show()
+
+
+###
+atttc=pd.read_csv('/Users/bchen/Desktop/Projects/Normal/EPICC_csv_for_sig/SBS7/SampleGene/ATT_TC.csv',header=,sep='\t')
+atttc['sample']=[("_").join(x.split("EPICC_")[1].split("_")[0:4]) for x in atttc[0]]
+atttc['length']=[int(x.split("EPICC")[0]) for x in atttc[0]]
+atttc.drop(0,axis=1,inplace=True)
+atttc['pid']=[x.split("_")[0] for x in atttc['sample']]
+
+pks1=['C516','C518','C519', 'C527', 'C528', 'C530', 'C532', 'C536',  'C538' , 'C539', 'C542' , 'C544', 'C547', 'C548', 'C549', 'C550',  'C561', 'C562']
+pks0=['C522','C524','C525','C531','C537','C543','C551','C552','C554','C555','C559','C560']
+
+
+MSI=['C516','C536','C548','C518','C562','C552']
+
+pks=[]
+for i in range(len(atttc)):
+    if atttc['pid'].iloc[i] in pks1:
+        pks.append('Yes')
+    elif atttc['pid'].iloc[i] in pks0:
+        pks.append('No')
+    else:
+        pass
+
+mssmsi=[]
+for i in range(len(atttc)):
+    if atttc['pid'].iloc[i] in MSI:
+        mssmsi.append('MSI')
+    else:
+        mssmsi.append('MSS')
+
+atttc['pks']=pks
+atttc['MSSMSI']=mssmsi
+
+dfDN=pd.read_csv("/Users/bchen/Desktop/Projects/Normal/FilesForDnDs/DistantNormalmutationLoad.csv",header=None,sep='\t')
+dfDN['sample']=[("_").join(x.split("EPICC_")[1].split("_")[0:4])[:-4] for x in dfDN[0]]
+dfDN['MutationLoad']=[int(x.split("DistantNormals")[0]) for x in dfDN[0]]
+dfDN.drop(0,axis=1,inplace=True)
+dfDN['type']='DistantNormals'
+dfDN.drop(0,axis=1,inplace=True)
+
+dfAN=pd.read_csv("/Users/bchen/Desktop/Projects/Normal/FilesForDnDs/AdjacentNormalmutationLoad.csv",header=None,sep='\t')
+dfAN['sample']=[("_").join(x.split("EPICC_")[1].split("_")[0:4])[:-4] for x in dfAN[0]]
+dfAN['MutationLoad']=[int(x.split("AdjacentNormals")[0]) for x in dfAN[0]]
+dfAN.drop(0,axis=1,inplace=True)
+dfAN['type']='AdjacentNormals'
+
+dfC=pd.read_csv("/Users/bchen/Desktop/Projects/Normal/FilesForDnDs/CancermutationLoad.csv",header=None,sep='\t')
+dfC['sample']=[("_").join(x.split("EPICC_")[1].split("_")[0:4])[:-4] for x in dfC[0]]
+dfC['MutationLoad']=[int(x.split("Cancer")[0]) for x in dfC[0]]
+dfC.drop(0,axis=1,inplace=True)
+dfC['type']='Cancer'
+
+dfcda=pd.concat([dfC,dfDN,dfAN])
+df=pd.merge(dfcda,atttc,on='sample',how='inner')
+df['proportion']=df['length']/df['MutationLoad']
+df=df[df['proportion']<1]
+df=df[df['MSSMSI']=='MSS']
+sns.boxplot(x = df['type'],y = df['proportion'],hue = df['pks'],order=['DistantNormals', 'AdjacentNormals','Cancer'],hue_order=['No','Yes'])
+plt.ylabel("proportion of t>C in ATT context")
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/FigureTC_ATTproportion.pdf')
+plt.show()
+
+#####
+
+dfmss=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/MSS_shortTdel_driver_cmg.csv")
+dfmsi=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/MSI_shortTdel_driver_cmg.csv")
+df=pd.concat([dfmss,dfmsi])
+
+df2=df[['pid','gene','rep']]
+df2=df2[df2['rep']<4]
+df3=pd.pivot_table(df2,index='pid',columns='gene',values='rep')
+df3t=df3.T
+df3t['count']=df3t.count(1)
+df3t.sort_values(by='count',ascending=False,inplace=True)
+df3t.drop('count',inplace=True,axis=1)
+sns.set(font_scale=0.8)
+
+fig = plt.figure(figsize=(10, 6))
+# gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1])
+# ax = plt.subplot(gs[0])
+sns.color_palette("tab10")
+ax=sns.heatmap(df3t,linewidth=1, linecolor='w', square=True,cbar_kws={'label': 'Number of rep T in T-homo',"shrink": 0.5,'ticks': [1, 2, 3]},vmin=1,vmax=3,cmap='"husl"')
+
+for _, spine in ax.spines.items():
+    spine.set_visible(True)
+    spine.set_linewidth(1)
+ax.set_xticklabels(ax.get_xmajorticklabels(),  rotation=90)
+
+
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Tdel_driver&cmg_MSSMSI_clonalsubclonalAll.pdf')
+
+df=pd.read_csv("/Users/bchen/Desktop/Projects/PKSFiles/Data/InputDataforplots/MSI_shortTdel_driver_cmg.csv")
+df2=df[['pid','gene','rep']]
+df2=df2[df2['rep']<4]
+df3=pd.pivot_table(df2,index='pid',columns='gene',values='rep')
+df3t=df3.T
+df3t['count']=df3t.count(1)
+df3t.sort_values(by='count',ascending=False,inplace=True)
+df3t.drop('count',inplace=True,axis=1)
+sns.set(font_scale=0.8)
+
+
+ax = plt.subplot(gs[1])
+ax=sns.heatmap(df3t,linewidth=1, linecolor='w', square=True,cbar_kws={'label': 'Number of rep T in T-homo',"shrink": 0.5,'ticks': [1, 2, 3]},cmap="YlGnBu")
+
+for _, spine in ax.spines.items():
+    spine.set_visible(True)
+    spine.set_linewidth(1)
+ax.set_xticklabels(ax.get_xmajorticklabels(),  rotation=90)
+
+
+plt.savefig('/Users/bchen/Desktop/Projects/PKSFiles/Figures/Tdel_driver&cmg_MSI*MSS_clonalsubcloanl.pdf')
